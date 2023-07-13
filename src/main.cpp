@@ -19,15 +19,12 @@
 
 #define DEBUG_LVL 1 // Comment this line to remove all debug messages
 
-byte ip[] = {192, 168,0, 34};
+byte ip[] = {192, 168, 0, 34};
 byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x68, 0xA5};
 byte broadcast[] = {192, 168, 0, 255};
 byte mask[] = {255, 255, 255, 0};
 
-// WS2811
-/*
-Dans l'idéal. On dirait le nombre de ligne sur la pin 2, nombre de lignes sur la pin 3, etc ...
-*/
+// ------- WS2811 GLOBAL VARIABLES ---------------
 
 const int ledsPerLine = 59;
 const int numLines = 5;
@@ -35,27 +32,31 @@ const int ledsPerStrip = ledsPerLine * numLines; // change for your setup
 const byte numStrips = 2;                        // change for your setup
 const int numLeds = ledsPerStrip * numStrips;
 const int numberOfChannels = numLeds * 3; // Total number of channels you want to receive (1 led = 3 channels)
-DMAMEM int displayMemory[ledsPerStrip * 6];
-int drawingMemory[ledsPerStrip * 6];
+                                          // DMAMEM int displayMemory[ledsPerStrip * 6];
+DMAMEM int *displayMemory;
+// int drawingMemory[ledsPerStrip * 6];
+int *drawingMemory;
 const int config = WS2811_GRB | WS2811_800kHz;
 const byte listPins[numStrips] = {2, 7};
 // const byte listPins[numPins] = {2};
-OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config, numStrips, listPins);
+// OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config, numStrips, listPins);
+OctoWS2811 *leds;
 
-// Arnet
+// ------Arnet GLOBAL VARIABLES -------------------
 Artnet artnet;
-const int startUniverse = 1;
+const int startUniverse = 7;
 const int numUniverses = numberOfChannels / 512 + ((numberOfChannels % 512) ? 1 : 0);
 const int maxUniverse = startUniverse + numUniverses; // This max is not accessible.
 bool universesReceived[numUniverses];
 bool sendFrame = 1; // flag , if==1, all universes got data, and leds can be updated.
 int previousDataLength = 0;
 bool useSync = true; // USE ARNET SYNCRONISATION
+bool isDHCP = true;  // USE DHCP
 
-// Debug
+// ------- Debug variables ------------------------
 int frameCount = 0;
 
-// Header
+// ---------Header --------------------------------
 int startDHCPEthernet();
 int startIPEthernet();
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data, IPAddress remoteIP);
@@ -68,9 +69,13 @@ void ledOK();
 void ledBlink();
 void ledOff();
 
+/********************************************************
+ *                   SETUP                              *
+ *********************************************************/
+
 void setup()
 {
-  // SERIAL
+  // -------- SERIAL SETUP---------
 
   Serial.begin(9600);
 #ifdef DEBUG_LVL
@@ -83,21 +88,32 @@ void setup()
   Serial.println("LED NEW initstrip");
   delay(100);
 
-  // LEDS
+  // -------- LEDS SETUP---------
+  Serial.println("Start Led Init");
+  // displayMemory = new int[ledsPerStrip * 6];
+  displayMemory = (int *)malloc(ledsPerStrip * 6 * sizeof(int));
+  drawingMemory = (int *)malloc(ledsPerStrip * 6 * sizeof(int));
+  leds = new OctoWS2811(ledsPerStrip, displayMemory, drawingMemory, config, numStrips, listPins);
   Serial.println("Start Led Begin");
-  leds.begin();
+  leds->begin();
   Serial.println("Start Led test");
   delay(100);
-  // initTest();
-  // initTestStrip();
-  //ledBlink();
-  delay(1000);
+  initTest();
+  delay(100);
 
-  // ETHERNET
+  // ---------- ETHERNET SETUP ------------
   // TODO, si on est en mode IP fixe, et qu'elle ne fonctionne pas, on pourrait aussi, tenter le dhcp dans la foulée.
   Serial.println("Ethernet Begin");
   // int er = startIPEthernet();
-  int er = startDHCPEthernet();
+  int er;
+  if (isDHCP)
+  {
+    er = startDHCPEthernet();
+  }
+  else
+  {
+    er = startIPEthernet();
+  }
   Serial.print("Ethernet error: ");
   Serial.println(er);
   delay(100);
@@ -110,8 +126,9 @@ void setup()
     ledError();
   }
 
-  // ARNET
+  // ------- ARNET SETUP ------------
   // artnet.begin(mac, ip);
+  Serial.println("start arnet");
   artnet.begin();
   artnet.setBroadcast(broadcast);
   artnet.setArtDmxCallback(onDmxFrame);
@@ -127,6 +144,10 @@ void setup()
 
   Serial.println("Arnet OK");
 }
+
+/********************************************************
+ *                    LOOP                              *
+ *********************************************************/
 
 void loop()
 {
@@ -221,21 +242,37 @@ int startIPEthernet()
 
 void initTest()
 {
+  ledOff();
+
   for (int i = 0; i < numLeds; i++)
-    leds.setPixel(i, 127, 0, 0);
-  leds.show();
-  delay(500);
+  {
+    leds->setPixel(i, 127, 0, 0);
+  }
+  delay(0.33 * numLeds);
+  leds->show();
+  delay(2000);
   for (int i = 0; i < numLeds; i++)
-    leds.setPixel(i, 0, 127, 0);
-  leds.show();
-  delay(500);
+  {
+    leds->setPixel(i, 0, 127, 0);
+  }
+  delay(0.33 * numLeds);
+  leds->show();
+  delay(2000);
   for (int i = 0; i < numLeds; i++)
-    leds.setPixel(i, 0, 0, 127);
-  leds.show();
-  delay(500);
+  {
+    leds->setPixel(i, 0, 0, 127);
+  }
+  delay(0.33 * numLeds);
+  leds->show();
+  delay(2000);
   for (int i = 0; i < numLeds; i++)
-    leds.setPixel(i, 0, 0, 0);
-  leds.show();
+  {
+    leds->setPixel(i, 0, 0, 0);
+  }
+  delay(0.33 * numLeds);
+  leds->show();
+
+  ledOff();
 }
 
 void initTestStrip()
@@ -243,9 +280,9 @@ void initTestStrip()
 
   for (int i = 0; i < numLeds; i++)
   {
-    leds.setPixel(i, 0, 0, 0);
+    leds->setPixel(i, 0, 0, 0);
   }
-  leds.show();
+  leds->show();
   delay(100);
 
   for (int i = 0; i < (int)numStrips; i++)
@@ -256,11 +293,11 @@ void initTestStrip()
       {
 
         int indexLed = (i * ledsPerStrip) + (j * ledsPerLine) + k;
-        leds.setPixel(indexLed, (i * 110) % 255, 255, (j * 100) % 255);
-        leds.show();
+        leds->setPixel(indexLed, (i * 110) % 255, 255, (j * 100) % 255);
+        leds->show();
         delay(100);
       }
-      leds.show();
+      leds->show();
       delay(400);
     }
     delay(1000);
@@ -271,28 +308,25 @@ void ledError()
 {
   for (int i = 0; i < numLeds; i++)
   {
-    leds.setPixel(i, 255, 0, 0);
-    delay(20);
-    leds.show();
+    leds->setPixel(i, 255, 0, 0);
   }
-
   delay(200);
-  leds.show();
+  leds->show();
 }
 
 void ledOK()
 {
   for (int i = 0; i < numLeds; i++)
   {
-    leds.setPixel(i, 0, 0, 255);
-    delay(20);
-    leds.show();
+    leds->setPixel(i, 0, 0, 255);
   }
+  delay(0.33 * numLeds);
+  leds->show();
 
   // delay(2000);
   // for (int i = 0; i < numLeds; i++)
-  //   leds.setPixel(i, 0, 0, 0);
-  // leds.show();
+  //   leds->setPixel(i, 0, 0, 0);
+  // leds->show();
 }
 
 void ledOff()
@@ -300,10 +334,11 @@ void ledOff()
   // turn all led to 0,0,0
   for (int i = 0; i < numLeds; i++)
   {
-    leds.setPixel(i, 0, 0, 0);
+    leds->setPixel(i, 0, 0, 0);
   }
   delay(20);
-  leds.show();
+  leds->show();
+  delay(0.33 * numLeds);
 }
 
 void ledBlink()
@@ -319,10 +354,10 @@ void ledBlink()
     Serial.println(j);
     for (int i = (numLeds - j); i < numLeds; i++)
     {
-      leds.setPixel(i, 255, 255, 255);
-      leds.show();
-      delay(1);
+      leds->setPixel(i, 255, 255, 255);
     }
+    leds->show();
+    delay(0.33 * numLeds);
 
     delay(1000);
     ledOff();
@@ -370,14 +405,14 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   for (int i = 0; i < length / 3; i++)
   {
     int led = i + (universe - startUniverse) * (previousDataLength / 3);
-    if (led < numLeds)
-      leds.setPixel(led, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+    if (led >= 0 && led < numLeds)
+      leds->setPixel(led, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
   }
   previousDataLength = length;
 
   if (sendFrame)
   {
-    leds.show();
+    leds->show();
     //  Reset universeReceived to 0
     memset(universesReceived, 0, numUniverses);
   }
@@ -390,14 +425,16 @@ void onDmxFrameSync(uint16_t universe, uint16_t length, uint8_t sequence, uint8_
   // print in one line, universe, lenght and sequence, in a nice way
   // DONT USE IT, because it freeze artnet process
   /*
-  Serial.print("Universe: ");
-  Serial.print(universe);
-  Serial.print(" | Data Lenght: ");
-  Serial.print(length);
-  Serial.print(" | Sequence: ");
-  Serial.print(sequence);
-  Serial.println("");
-  */
+
+    Serial.print("Universe: ");
+    Serial.print(universe);
+    Serial.print(" | Data Lenght: ");
+    Serial.print(length);
+    Serial.print(" | Sequence: ");
+    Serial.print(sequence);
+    Serial.println("");
+    */
+
 #endif
 
   // Store which universe has got in
@@ -409,13 +446,15 @@ void onDmxFrameSync(uint16_t universe, uint16_t length, uint8_t sequence, uint8_
   for (int i = 0; i < length / 3; i++)
   {
     int led = i + (universe - startUniverse) * (previousDataLength / 3);
-    if (led < numLeds)
-      leds.setPixel(led, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+    if (led < numLeds && led >= 0)
+    { // led>=0 is a security, because if it's receiving universe=1 with startUniverse at 7
+      leds->setPixel(led, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+    }
   }
   previousDataLength = length;
 }
 
 void onSync(IPAddress remoteIP)
 {
-  leds.show();
+  leds->show();
 }

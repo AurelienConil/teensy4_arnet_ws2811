@@ -19,19 +19,10 @@
 
 #define DEBUG_LVL 1 // Comment this line to remove all debug messages
 
-struct Config
-{
-    bool isdhcp; // true if we use dhcp, false if we use ip fixe
-    int ip[4];
-    int mac[6];
-    int broadcast[4];   // broadcast address, depends of router
-    bool issync;        // arnet sync , allow sync with multiple teensy use. Improve visual quality
-    int numberofpins;   // number of pins used, numbers of strips.
-    int arduinopins[8]; // Array of 8, but only one can be used
-    int ledsperline;    // Number of leds in one line
-    int numberoflines;  // Number of line for each teensy pins
-    int startuniverse;
-};
+byte ip[] = {192, 168, 0, 34};
+byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x68, 0xA5};
+byte broadcast[] = {192, 168, 0, 255};
+byte mask[] = {255, 255, 255, 0};
 
 // WS2811
 /*
@@ -53,7 +44,7 @@ OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config, numStrips, l
 
 // Arnet
 Artnet artnet;
-const int startUniverse = 7;
+const int startUniverse = 1;
 const int numUniverses = numberOfChannels / 512 + ((numberOfChannels % 512) ? 1 : 0);
 const int maxUniverse = startUniverse + numUniverses; // This max is not accessible.
 bool universesReceived[numUniverses];
@@ -99,7 +90,7 @@ void setup()
     delay(100);
     // initTest();
     // initTestStrip();
-    ledBlink();
+    // ledBlink();
     delay(1000);
 
     // ETHERNET
@@ -418,8 +409,10 @@ void onDmxFrameSync(uint16_t universe, uint16_t length, uint8_t sequence, uint8_
     for (int i = 0; i < length / 3; i++)
     {
         int led = i + (universe - startUniverse) * (previousDataLength / 3);
-        if (led < numLeds)
+        if (led < numLeds && led >= 0)
+        { // led>=0 is a security, because if it's receiving universe=1 with startUniverse at 7
             leds.setPixel(led, data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+        }
     }
     previousDataLength = length;
 }
