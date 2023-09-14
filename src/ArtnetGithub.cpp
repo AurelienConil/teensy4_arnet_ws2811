@@ -64,6 +64,39 @@ void Artnet::setBroadcast(IPAddress bc)
   broadcast = bc;
 }
 
+void Artnet::modifyArtpollReply(String shortname, String longname, int port, int *swin, int *swout)
+{
+  // this function can modify the artnet_reply_s struct
+  // in order to personnalize the reply to the poll
+  // It can change the shortname and longname
+  // It can change the number of ports
+  // It can change the swin and swout
+
+  // convert shortname string to char* and modidy struct
+  uint8_t shortname_char[18];
+  shortname.toCharArray((char *)shortname_char, 18);
+  memcpy(ArtPollReply.shortname, shortname_char, sizeof(shortname_char));
+
+  // convert longname string to char* and modidy struct
+  uint8_t longname_char[64];
+  longname.toCharArray((char *)longname_char, 64);
+  memcpy(ArtPollReply.longname, longname_char, sizeof(longname_char));
+
+  // modify the number of ports
+  ArtPollReply.numbports = port;
+
+  // modify the swin and swout
+  uint8_t swin_char[4];
+  uint8_t swout_char[4];
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    swin_char[i] = swin[i];
+    swout_char[i] = swout[i];
+  }
+  memcpy(ArtPollReply.swout, swout_char, sizeof(swout_char));
+  memcpy(ArtPollReply.swin, swin_char, sizeof(swin_char));
+}
+
 uint16_t Artnet::read()
 {
   packetSize = Udp.parsePacket();

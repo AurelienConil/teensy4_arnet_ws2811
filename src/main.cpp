@@ -178,7 +178,7 @@ void setup()
   }
 
   // ------- ARNET SETUP ------------
-  // artnet.begin(mac, ip);
+
   Serial.println("start arnet");
   artnet.begin();
   artnet.setBroadcast(configlist.broadcast);

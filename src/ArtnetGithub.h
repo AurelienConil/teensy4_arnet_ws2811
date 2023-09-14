@@ -105,9 +105,10 @@ public:
   uint16_t read();
   void printPacketHeader();
   void printPacketContent();
+  void modifyArtpollReply(String s, String l);
 
   // Return a pointer to the start of the DMX data
-  inline uint8_t* getDmxFrame(void)
+  inline uint8_t* getDmxFrame(String shortname, String longname, int port, int *swin, int *swout)
   {
     return artnetPacket + ART_DMX_START;
   }
