@@ -49,6 +49,10 @@ byte mac[] = {0x04, 0xE9, 0xE5, 0x00, 0x68, 0xA5};
 byte broadcast[] = {192, 168, 0, 255};
 byte mask[] = {255, 255, 255, 0};
 
+int pinLedOn = 32;
+int pinLedArnet = 31;
+boolean powerLedLOn = false;
+
 // ------- WS2811 GLOBAL VARIABLES ---------------
 
 // const int ledsPerLine = 59;
@@ -152,6 +156,11 @@ void setup()
   initTest();
   delay(100);
 
+  // --------- Extra 5mm led setup ------------
+  pinMode(pinLedOn, OUTPUT);
+  pinMode(pinLedArnet, OUTPUT);
+
+
   // ---------- ETHERNET SETUP ------------
   // TODO, si on est en mode IP fixe, et qu'elle ne fonctionne pas, on pourrait aussi, tenter le dhcp dans la foulée.
   Serial.println("Ethernet Begin");
@@ -180,7 +189,8 @@ void setup()
   // ------- ARNET SETUP ------------
 
   Serial.println("start arnet");
-  artnet.begin();
+  // artnet.begin(); //begin artnet with custom constructor
+  artnet.beginCustomArtPoll(configlist.startuniverse, configlist.numberofuniverses);
   artnet.setBroadcast(configlist.broadcast);
   universesReceived = (bool *)malloc(configlist.numberofuniverses * sizeof(bool));
   artnet.setArtDmxCallback(onDmxFrame);
@@ -204,17 +214,30 @@ void setup()
 void loop()
 {
   // we call the read function inside the loop
-  artnet.read();
+  int trame = artnet.read();
 
-#ifdef DEBUG_LVL
+  // turn on the led on pin 31 if trame is > 0
+  if (trame > 0)
+  {
+    digitalWrite(pinLedArnet, HIGH);
+  }
+  else
+  {
+    digitalWrite(pinLedArnet, LOW);
+  }
+
   frameCount++;
   if (frameCount == 1000000)
   {
+#ifdef DEBUG_LVL
     Serial.print("ping: ");
     Serial.println(millis());
-    frameCount = 0;
-  }
 #endif
+    frameCount = 0;
+    powerLedLOn = !powerLedLOn;
+    digitalWrite(pinLedOn, powerLedLOn);
+  }
+
 }
 
 int startDHCPEthernet()
@@ -564,7 +587,7 @@ void loadConfiguration(const char *filename, Config &config)
   config.numberofstrips = doc["numstrips"];
   config.numberofleds = config.ledsperline * config.numberoflines * config.numberofstrips;
   config.numberofchannels = config.numberofleds * 3;
-  config.numberofuniverses = config.numberofchannels / 512 + ((config.numberofchannels % 512) ? 1 : 0);
+  config.numberofuniverses = config.numberofchannels / 512 + ((config.numberofchannels % 512) ? 1 : 0); // +1 si la division entire n'est pas égale a 0. 
   config.maxuniverses = config.startuniverse + config.numberofuniverses;
   /*
   int numberoflines;
@@ -618,4 +641,14 @@ void printConfiguration()
   Serial.println(configlist.ledsperline);
   Serial.print("startUniverse: ");
   Serial.println(configlist.startuniverse);
+  Serial.print("num of universe: ");
+  Serial.println(configlist.numberofuniverses);
+  Serial.print("num of leds: ");
+  Serial.println(configlist.numberofleds);
+  Serial.print("num of channels: ");
+  Serial.println(configlist.numberofchannels);
+  Serial.print("num of strips: ");
+  Serial.println(configlist.numberofstrips);
+  Serial.print("num of lines: ");
+  Serial.println(configlist.numberoflines);
 }
