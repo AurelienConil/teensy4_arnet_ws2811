@@ -111,7 +111,6 @@ public:
   void standardArtPoll();
   void customArtPoll();
 
-
   // Return a pointer to the start of the DMX data
   inline uint8_t *getDmxFrame(String shortname, String longname, int port, int *swin, int *swout)
   {

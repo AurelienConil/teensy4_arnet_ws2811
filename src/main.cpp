@@ -17,7 +17,7 @@
 #include "ArtnetGithub.h"
 #include <OctoWS2811.h>
 
-#define DEBUG_LVL 1 // Comment this line to remove all debug messages
+//#define DEBUG_LVL 1 // Comment this line to remove all debug messages
 
 //-------------- STRUCTURE CONFIG ------------------
 struct Config
@@ -53,6 +53,9 @@ int pinLedOn = 32;
 int pinLedArnet = 31;
 boolean powerLedLOn = false;
 
+
+unsigned long lastMsgTime = 0;
+
 // ------- WS2811 GLOBAL VARIABLES ---------------
 
 // const int ledsPerLine = 59;
@@ -70,6 +73,7 @@ const int config = WS2811_GRB | WS2811_800kHz;
 //  const byte listPins[numPins] = {2};
 //  OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config, numStrips, listPins);
 OctoWS2811 *leds;
+
 
 // ------Arnet GLOBAL VARIABLES -------------------
 Artnet artnet;
@@ -97,6 +101,7 @@ void onSync(IPAddress remoteIP);
 // LED TEST
 void initTest();
 void initTestStrip();
+void initTestStripFirst();
 void ledError();
 void ledOK();
 void ledBlink();
@@ -127,6 +132,8 @@ void setup()
 
   //---------SD SETUP -------------
 
+  
+
   Serial.print("Initializing SD card...");
   if (!SD.begin(BUILTIN_SDCARD))
   {
@@ -153,7 +160,7 @@ void setup()
   leds->begin();
   Serial.println("Start Led test");
   delay(100);
-  initTest();
+  initTestStripFirst();
   delay(100);
 
   // --------- Extra 5mm led setup ------------
@@ -214,17 +221,19 @@ void setup()
 void loop()
 {
   // we call the read function inside the loop
+  // Not used anymore
   int trame = artnet.read();
 
   // turn on the led on pin 31 if trame is > 0
-  if (trame > 0)
-  {
-    digitalWrite(pinLedArnet, HIGH);
-  }
-  else
+  if (millis() - lastMsgTime > 1000)
   {
     digitalWrite(pinLedArnet, LOW);
   }
+  else
+  {
+    digitalWrite(pinLedArnet, HIGH);
+  }
+
 
   frameCount++;
   if (frameCount == 1000000)
@@ -323,12 +332,14 @@ void initTest()
   {
     leds->setPixel(i, 127, 0, 0);
   }
+  delay(20);
   ledShow();
   delay(2000);
   for (int i = 0; i < configlist.numberofleds; i++)
   {
     leds->setPixel(i, 0, 127, 0);
   }
+  delay(20);
   ledShow();
   delay(2000);
   for (int i = 0; i < configlist.numberofleds; i++)
@@ -336,14 +347,34 @@ void initTest()
     leds->setPixel(i, 0, 0, 127);
   }
   ledShow();
+  delay(20);
   delay(2000);
   for (int i = 0; i < configlist.numberofleds; i++)
   {
     leds->setPixel(i, 0, 0, 0);
   }
+  delay(20);
   ledShow();
 
   ledOff();
+}
+
+void initTestStripFirst(){
+
+ledOff();
+leds->setPixel(0, 255, 0, 0);
+leds->setPixel(1, 0, 255, 0);
+leds->setPixel(2, 0,0, 255);
+leds->setPixel(3, 255,255, 255);
+leds->setPixel(4, 255, 0, 0);
+leds->setPixel(5, 0, 255, 0);
+leds->setPixel(6, 0,0, 255);
+delay(20);
+leds->show();
+delay(5000);
+
+
+
 }
 
 void initTestStrip()
@@ -379,7 +410,7 @@ void ledError()
 {
   for (int i = 0; i < configlist.numberofleds; i++)
   {
-    leds->setPixel(i, 255, 0, 0);
+    leds->setPixel(i, 20, 0, 0);
   }
   delay(200);
   ledShow();
@@ -389,7 +420,7 @@ void ledOK()
 {
   for (int i = 0; i < configlist.numberofleds; i++)
   {
-    leds->setPixel(i, 0, 0, 255);
+    leds->setPixel(i, 20, 0, 0);
   }
   ledShow();
 
@@ -447,11 +478,12 @@ void ledShow()
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data, IPAddress remoteIP)
 {
   sendFrame = 1;
+  lastMsgTime = millis();
 
 #ifdef DEBUG_LVL
   // print in one line, universe, lenght and sequence, in a nice way
   // DONT USE IT, because it freeze artnet process
-  /*
+  
   Serial.print("Universe: ");
   Serial.print(universe);
   Serial.print(" | Data Lenght: ");
@@ -459,7 +491,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   Serial.print(" | Sequence: ");
   Serial.print(sequence);
   Serial.println("");
-  */
+  
 #endif
 
   // Store which universe has got in
@@ -499,10 +531,12 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
 void onDmxFrameSync(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *data, IPAddress remoteIP)
 {
 
+  lastMsgTime = millis();
+
 #ifdef DEBUG_LVL
   // print in one line, universe, lenght and sequence, in a nice way
   // DONT USE IT, because it freeze artnet process
-  /*
+  
 
     Serial.print("Universe: ");
     Serial.print(universe);
@@ -511,7 +545,7 @@ void onDmxFrameSync(uint16_t universe, uint16_t length, uint8_t sequence, uint8_
     Serial.print(" | Sequence: ");
     Serial.print(sequence);
     Serial.println("");
-    */
+    
 
 #endif
 
