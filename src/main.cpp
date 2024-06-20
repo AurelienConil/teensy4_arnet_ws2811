@@ -126,7 +126,7 @@ void setup()
     delay(100);
   }
 #endif
-  delay(200);
+  delay(1500);
   Serial.println("LED NEW initstrip");
   delay(100);
 

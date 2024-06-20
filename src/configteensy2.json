@@ -1,0 +1,12 @@
+{
+  "isdhcp": true,
+  "ip": [192, 168, 0, 34],
+  "broadcast": [192, 168, 0, 255],
+  "mac": [4, 13, 100, 0, 82, 13],
+  "issync": true,
+  "arduinopins": [2, 7],
+  "ledsperline": 59,
+  "numberoflines": 10,
+  "startuniverse": 8,
+  "numstrips": 2
+}
