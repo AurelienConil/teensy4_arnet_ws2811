@@ -17,7 +17,7 @@
 #include "ArtnetGithub.h"
 #include <OctoWS2811.h>
 
-//#define DEBUG_LVL 1 // Comment this line to remove all debug messages
+// #define DEBUG_LVL 1 // Comment this line to remove all debug messages
 
 //-------------- STRUCTURE CONFIG ------------------
 struct Config
@@ -115,6 +115,13 @@ void ledShow();
 
 void setup()
 {
+  // Small led ON
+  // --------- Extra 5mm led setup ------------
+  pinMode(pinLedOn, OUTPUT);
+  pinMode(pinLedArnet, OUTPUT);
+  digitalWrite(pinLedArnet, HIGH);
+  digitalWrite(pinLedOn, HIGH);
+
   // -------- SERIAL SETUP---------
 
   Serial.begin(9600);
@@ -167,11 +174,6 @@ void setup()
   delay(100);
   initTestStripFirst();
   delay(100);
-
-  // --------- Extra 5mm led setup ------------
-  pinMode(pinLedOn, OUTPUT);
-  pinMode(pinLedArnet, OUTPUT);
-
 
   // ---------- ETHERNET SETUP ------------
   // TODO, si on est en mode IP fixe, et qu'elle ne fonctionne pas, on pourrait aussi, tenter le dhcp dans la foulée.
