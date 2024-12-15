@@ -53,7 +53,6 @@ int pinLedOn = 32;
 int pinLedArnet = 31;
 boolean powerLedLOn = false;
 
-
 unsigned long lastMsgTime = 0;
 
 // ------- WS2811 GLOBAL VARIABLES ---------------
@@ -73,7 +72,6 @@ const int config = WS2811_GRB | WS2811_800kHz;
 //  const byte listPins[numPins] = {2};
 //  OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config, numStrips, listPins);
 OctoWS2811 *leds;
-
 
 // ------Arnet GLOBAL VARIABLES -------------------
 Artnet artnet;
@@ -132,12 +130,19 @@ void setup()
 
   //---------SD SETUP -------------
 
-  
-
   Serial.print("Initializing SD card...");
   if (!SD.begin(BUILTIN_SDCARD))
   {
     Serial.println("initialization failed!");
+    while (1)
+    {
+      digitalWrite(pinLedArnet, HIGH);
+      digitalWrite(pinLedOn, LOW);
+      delay(500);
+      digitalWrite(pinLedArnet, LOW);
+      digitalWrite(pinLedOn, HIGH);
+      delay(500);
+    }
     return;
   }
   Serial.println("initialization done.");
@@ -234,7 +239,6 @@ void loop()
     digitalWrite(pinLedArnet, HIGH);
   }
 
-
   frameCount++;
   if (frameCount == 1000000)
   {
@@ -246,7 +250,6 @@ void loop()
     powerLedLOn = !powerLedLOn;
     digitalWrite(pinLedOn, powerLedLOn);
   }
-
 }
 
 int startDHCPEthernet()
@@ -359,22 +362,20 @@ void initTest()
   ledOff();
 }
 
-void initTestStripFirst(){
+void initTestStripFirst()
+{
 
-ledOff();
-leds->setPixel(0, 255, 0, 0);
-leds->setPixel(1, 0, 255, 0);
-leds->setPixel(2, 0,0, 255);
-leds->setPixel(3, 255,255, 255);
-leds->setPixel(4, 255, 0, 0);
-leds->setPixel(5, 0, 255, 0);
-leds->setPixel(6, 0,0, 255);
-delay(20);
-leds->show();
-delay(5000);
-
-
-
+  ledOff();
+  leds->setPixel(0, 255, 0, 0);
+  leds->setPixel(1, 0, 255, 0);
+  leds->setPixel(2, 0, 0, 255);
+  leds->setPixel(3, 255, 255, 255);
+  leds->setPixel(4, 255, 0, 0);
+  leds->setPixel(5, 0, 255, 0);
+  leds->setPixel(6, 0, 0, 255);
+  delay(20);
+  leds->show();
+  delay(5000);
 }
 
 void initTestStrip()
@@ -483,7 +484,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
 #ifdef DEBUG_LVL
   // print in one line, universe, lenght and sequence, in a nice way
   // DONT USE IT, because it freeze artnet process
-  
+
   Serial.print("Universe: ");
   Serial.print(universe);
   Serial.print(" | Data Lenght: ");
@@ -491,7 +492,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t *d
   Serial.print(" | Sequence: ");
   Serial.print(sequence);
   Serial.println("");
-  
+
 #endif
 
   // Store which universe has got in
@@ -536,16 +537,14 @@ void onDmxFrameSync(uint16_t universe, uint16_t length, uint8_t sequence, uint8_
 #ifdef DEBUG_LVL
   // print in one line, universe, lenght and sequence, in a nice way
   // DONT USE IT, because it freeze artnet process
-  
 
-    Serial.print("Universe: ");
-    Serial.print(universe);
-    Serial.print(" | Data Lenght: ");
-    Serial.print(length);
-    Serial.print(" | Sequence: ");
-    Serial.print(sequence);
-    Serial.println("");
-    
+  Serial.print("Universe: ");
+  Serial.print(universe);
+  Serial.print(" | Data Lenght: ");
+  Serial.print(length);
+  Serial.print(" | Sequence: ");
+  Serial.print(sequence);
+  Serial.println("");
 
 #endif
 
@@ -621,7 +620,7 @@ void loadConfiguration(const char *filename, Config &config)
   config.numberofstrips = doc["numstrips"];
   config.numberofleds = config.ledsperline * config.numberoflines * config.numberofstrips;
   config.numberofchannels = config.numberofleds * 3;
-  config.numberofuniverses = config.numberofchannels / 512 + ((config.numberofchannels % 512) ? 1 : 0); // +1 si la division entire n'est pas égale a 0. 
+  config.numberofuniverses = config.numberofchannels / 512 + ((config.numberofchannels % 512) ? 1 : 0); // +1 si la division entire n'est pas égale a 0.
   config.maxuniverses = config.startuniverse + config.numberofuniverses;
   /*
   int numberoflines;

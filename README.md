@@ -1,9 +1,30 @@
+# Branchement
+
+Dans la version 2, avec level shifter 3.3v vers 5v
+
+Pin 1 : 29
+Pin 2 : 24
+
+# Cable Ethernet
+
+Le cable du kit ethernet par en direction de la prise USB, donc le trait rouge du coté de la pin 0
+Cothé prise ethernet, le cable par à l'opposé de la connectique ( en toute logique)
+
+# Prise d'alimentation.
+
+La prise d'alimentation est une 2 broches, numéroté 1 et 2
+Pin 1 : GND
+Pin 2 : 12v
+
+
 
 # Petites Led
 
 1. Led power . Clignotement indique la teensy est fonctionnement normal
 
 2. Arnet . S'allume 1 sec a chaque message Arnet. S'eteint  1sec après l'arret des messages arnet.
+
+3. Si il y a un problème de lecture de la carte SD. Les 2 leds clignotent de manière inversé 2 fois par secondes.
 
 
 # Explication du fichier carte micro sd
@@ -38,8 +59,8 @@ La carte contient un fichier configteensy.json
     ],
     "issync": true,
     "arduinopins": [
-        2,
-        7
+        29,
+        24
     ],
     "ledsperline": 59,
     "numberoflines": 5,
